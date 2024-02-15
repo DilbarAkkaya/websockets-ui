@@ -1,19 +1,21 @@
 {
-    "name": "ws_task",
+    "name": "simple-crud-api",
     "version": "1.0.0",
-    "description": "Template for the WebSocket remote control task",
-    "main": "index.js",
-    "type": "module",
+    "description": "simple CRUD API using in-memory database",
+    "main": "index.ts",
     "scripts": {
-        "start": "node ./index.js",
-        "start:dev": "nodemon ./index.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
+      "test": "jest",
+      "start:dev": "nodemon --exec ts-node-dev index.ts",
+      "start": "npm run build && node dist/index.js",
+      "build": "tsc"
     },
-    "author": "Andrei Auchynnikau",
+    "author": "ui - Andrei Auchynnikau",
     "keywords": [],
     "license": "ISC",
     "devDependencies": {
+        "@types/dotenv-webpack": "^7.0.7",
         "@types/node": "^20.11.17",
+        "clean-webpack-plugin": "^4.0.0",
         "cross-env": "^7.0.3",
         "dotenv": "^16.4.4",
         "eslint": "^8.56.0",
