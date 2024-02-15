@@ -4,10 +4,10 @@
     "description": "simple CRUD API using in-memory database",
     "main": "index.ts",
     "scripts": {
-      "test": "jest",
-      "start:dev": "nodemon --exec ts-node-dev index.ts",
-      "start": "npm run build && node dist/index.js",
-      "build": "tsc"
+        "test": "jest",
+        "start:dev": "nodemon --exec ts-node-dev index.ts",
+        "start": "npm run build && node dist/index.js",
+        "build": "tsc"
     },
     "author": "ui - Andrei Auchynnikau",
     "keywords": [],
@@ -15,6 +15,7 @@
     "devDependencies": {
         "@types/dotenv-webpack": "^7.0.7",
         "@types/node": "^20.11.17",
+        "@types/ws": "^8.5.10",
         "clean-webpack-plugin": "^4.0.0",
         "cross-env": "^7.0.3",
         "dotenv": "^16.4.4",
