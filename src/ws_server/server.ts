@@ -13,6 +13,6 @@ wsServer.on('listening', () => {
 wsServer.on('connection', (ws) => {
   console.log(`New WebSocket connection`);
   ws.on('message', (message) => {
-    console.log(message);
+    console.log(typeof(message));
   })
 });
