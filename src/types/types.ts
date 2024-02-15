@@ -1,3 +1,5 @@
+import { WebSocket } from "ws";
+
 export interface WebSocketMessage<T> {
   type: TypesOfMessages;
   data: T;
@@ -18,4 +20,5 @@ export enum TypesOfMessages {
 export interface PlayerData {
   name: string;
   password: string;
+  ws?: WebSocket;
 }
