@@ -1,6 +1,6 @@
 import { WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
-import { playerDB, roomDB } from './database/DB';
+import { playerDB } from './database/DB';
 import { handlerReg } from '../handlers/regHandler';
 import { handlerCreateRoom } from '../handlers/createRoomHandler';
 import { TypesOfMessages } from '../types/types';
@@ -21,10 +21,14 @@ wsServer.on('connection', (ws) => {
   ws.on('message', (message) => {
     try {
       const messageString = message.toString('utf-8');
+      if (!messageString.trim()) {
+        console.error('Received empty message');
+        return;
+      }
       const parsedMessage = JSON.parse(messageString);
       const parsedData = JSON.parse(parsedMessage.data);
       switch (parsedMessage.type) {
-        case 'reg':
+        case TypesOfMessages.Reg:
           const regResult = handlerReg(parsedData, socketId);
           console.log('registration', regResult);
           const regResponse = {
@@ -33,24 +37,29 @@ wsServer.on('connection', (ws) => {
             id: regResult.id,
           }
           ws.send(JSON.stringify(regResponse));
-          handlerCreateRoom(socketId);
+          const createdRoom = handlerCreateRoom(Number(socketId));
           const roomResponse = {
-            type: TypesOfMessages.UpdateRoom,
-            data: JSON.stringify(roomDB),
+            type: TypesOfMessages.CreateGame,
+            data: JSON.stringify(createdRoom),
             id: 0
           };
           ws.send(JSON.stringify(roomResponse));
           break;
-        case 'create_room':
-          const newRoom = handlerCreateRoom(socketId);
+        case TypesOfMessages.CreateGame:
+          const newRoom = handlerCreateRoom(Number(socketId));
+          console.log(newRoom)
           const createRoomResponse = {
-            type: TypesOfMessages.CreateRoom,
-            data: newRoom,
+            type: TypesOfMessages.CreateGame,
+            data: JSON.stringify(newRoom),
             id: 0
           };
+          console.log(createRoomResponse, 'createroom');
           ws.send(JSON.stringify(createRoomResponse));
-          console.log(roomDB);
+
           break;
+          case TypesOfMessages.AddUserToRoom:
+               // handleAddUser(parsedMessage.data.indexRoom, socketId);
+                break;
       }
     } catch (err) {
       console.error(`Parsing JSON error: ${err}`)

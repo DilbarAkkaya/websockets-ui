@@ -27,7 +27,6 @@ export interface PlayerData {
 
 export interface RoomData {
   indexRoom: number;
-  players: string[];
 }
 
 export interface GameData {
