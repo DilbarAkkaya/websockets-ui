@@ -1,13 +1,9 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
 import { handlerReg } from '../handlers/regHandler';
-//import { handlerCreateRoom } from '../handlers/createRoomHandler';
 import { TypesOfMessages } from '../types/types';
 dotenv.config();
 import { PlayerData, RoomData } from "../types/types";
-
-/* export const playerDB: { [userID: string]: PlayerData } = {};
-export const roomDB: { [roomID: string]: RoomData } = {}; */
 
 export const usersDB: PlayerData[] = [];
 export const roomDB: RoomData[] = [];
@@ -38,20 +34,7 @@ wsServer.on('connection', (ws) => {
             id: 0,
           }
           ws.send(JSON.stringify(regResponse));
-          updateRoomState(ws)
-          /*           const updateResponse = {
-                      type: TypesOfMessages.UpdateRoom,
-                      data: JSON.stringify(roomDB),
-                      id: 0
-                    };
-                    console.log('updateResponse:', updateResponse);
-                    wsServer.clients.forEach(client => {
-                      if (client.readyState === ws.OPEN) {
-                        client.send(JSON.stringify(updateResponse));
-                      }
-          
-                    });
-                    console.log('roomDB updated:', roomDB); */
+          updateRoomState(ws);
           break;
         case TypesOfMessages.CreateRoom:
           try {
@@ -103,11 +86,6 @@ wsServer.on('connection', (ws) => {
                 id: 0
               };
               ws.send(JSON.stringify(addUserResponse))
-              /* wsServer.clients.forEach(client => {
-                if (client.readyState === ws.OPEN) {
-                  client.send(JSON.stringify(addUserResponse));
-                }
-              }); */
               console.log(`Player ${player.name} added to room ${indexRoom}`);
             } else {
               console.error(`Player with ID ${userID} does not exist.`);
