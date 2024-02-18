@@ -1,15 +1,26 @@
-import { roomDB } from "../ws_server/database/DB";
-export const handlerCreateRoom = (socketId: number) => {
-  if (roomDB[socketId]) {
-    console.log(`Room with ID ${socketId} already exists.`);
+/* import { RoomData } from 'types/types';
+import { roomDB, playerDB } from '../ws_server/server';
+
+export const handlerCreateRoom = (id: number, userID: number) => {
+  if (roomDB[id.toString()]) {
+    console.log(`Room with ID ${id} already exists.`);
     return;
   }
-  const newRoom = {
-      indexRoom: socketId,
-      players: [socketId]
+  console.log('dkhksfjhgkjfhgkhfh')
+  const player = playerDB[userID];
+  const newRoom: RoomData = {
+      roomID: id,
+      roomUsers:
+                    [
+                        {
+                            name: player?.name,
+                            index: userID,
+                        }
+                    ],
   };
-  roomDB[socketId] = newRoom;
-  console.log(`Room created with index ${socketId}`);
+  console.log(newRoom, '1111111')
+  roomDB[id.toString()] = newRoom;
+  console.log(`Room created with index ${id}`);
 return newRoom
 
-};
+}; */

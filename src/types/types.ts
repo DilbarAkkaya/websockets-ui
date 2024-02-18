@@ -1,4 +1,4 @@
-import { WebSocket } from "ws";
+//import { WebSocket } from "ws";
 
 export interface WebSocketMessage<T> {
   type: TypesOfMessages;
@@ -22,11 +22,16 @@ export enum TypesOfMessages {
 export interface PlayerData {
   name: string;
   password: string;
-  ws?: WebSocket;
+  userID?: number;
 }
 
+
 export interface RoomData {
-  indexRoom: number;
+  roomID: number;
+  roomUsers: {
+    name?: string;
+    index?: number;
+  }[];
 }
 
 export interface GameData {
@@ -34,7 +39,7 @@ export interface GameData {
   idPlayer: number;
 }
 
-export interface UserRoomResponse {
+export interface UserRegResponse {
   name: string;
   index: number;
   error: boolean;
@@ -42,6 +47,14 @@ export interface UserRoomResponse {
 }
 export interface RegistrationData {
   type: TypesOfMessages.Reg;
-  data:UserRoomResponse;
-  id: 0,
+  data:UserRegResponse;
+  id: 0;
 }
+/* export interface RoomIndex {
+  indexRoom: number;
+}
+export interface AddUser {
+  type: TypesOfMessages.AddUserToRoom;
+  data: RoomIndex;
+  id: 0;
+} */

@@ -1,4 +1,4 @@
-import { TypesOfMessages, UserRoomResponse } from "../types/types";
+/* import { TypesOfMessages, UserRoomResponse } from "../types/types";
 
 export const sendUserRoomResponse = (data: UserRoomResponse) =>{
   const response = {
@@ -7,4 +7,4 @@ export const sendUserRoomResponse = (data: UserRoomResponse) =>{
     id: 0
   }
   return response;
-}
+} */
