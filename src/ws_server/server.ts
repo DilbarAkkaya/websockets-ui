@@ -14,13 +14,21 @@ wsServer.on('listening', () => {
   console.log(`WS Server is starting on the ${PORT} `);
   console.log(`WebSocket server parameters: ${JSON.stringify(wsServer.options.port)}`);
 })
-
+const wsUserMap: Map<WebSocket, number> = new Map();
 wsServer.on('connection', (ws) => {
   const userID = generateUniq();
+  wsUserMap.set(ws, userID);
+ 
+  //const userID = generateUniq();
   const roomID = generateUniq();
   ws.on('message', (message) => {
     const messageString = message.toString('utf-8');
     const parsedMessage = JSON.parse(messageString);
+    const userID: number | undefined = wsUserMap.get(ws);
+    if (!userID) {
+      console.error('UserID not found for ws');
+      return;
+    }
     console.log('parsedMessage', parsedMessage)
     try {
       switch (parsedMessage.type) {
@@ -96,15 +104,6 @@ console.log(JSON.stringify(room.roomUsers), "these are roomusers")
                   client.send(JSON.stringify(addUserResponse));
                 }
               });
-/*               room.roomUsers.forEach(roomUser => {
-                const player = usersDB.find(user => user.userID === roomUser.index);
-
-                if (player && player.ws) {
-                  console.log(1111)
-                  
-                  player.ws.send(JSON.stringify(addUserResponse));
-                }
-              }); */
               roomDB.splice(indexRoom, 1);
               console.log(`Player ${player.name} added to room ${indexRoom}`);
             } else {
@@ -122,6 +121,7 @@ console.log(JSON.stringify(room.roomUsers), "these are roomusers")
   });
 
   ws.on('close', () => {
+    wsUserMap.delete(ws);
     console.log('Connection is closed');
   });
 });
