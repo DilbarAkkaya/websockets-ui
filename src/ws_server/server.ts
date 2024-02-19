@@ -18,7 +18,7 @@ const wsUserMap: Map<WebSocket, number> = new Map();
 wsServer.on('connection', (ws) => {
   const userID = generateUniq();
   wsUserMap.set(ws, userID);
- 
+
   //const userID = generateUniq();
 
   ws.on('message', (message) => {
@@ -77,47 +77,47 @@ wsServer.on('connection', (ws) => {
           }
 
           break;
-          case TypesOfMessages.AddUserToRoom:
-            const parsedDataFromAdd = JSON.parse(parsedMessage.data);
-            console.log('parseddata', parsedDataFromAdd)
-            const indexRoom = parsedDataFromAdd.indexRoom;
-            console.log('indexroom', indexRoom)
-            const roomChooseToAdd = roomDB.find(room => room.roomID === indexRoom);
-            if (roomChooseToAdd) {
-              const currentPlayer = usersDB.find(user => user.ws === ws);
-              const firstPlayer = usersDB.find(user => user.userID === roomChooseToAdd.roomUsers[0]?.index);
-              console.log(roomChooseToAdd.roomUsers)
-              if (currentPlayer && firstPlayer) {
-                const playerAlreadyInRoom = roomChooseToAdd.roomUsers.some(user => user.index === currentPlayer.userID);
-                if (playerAlreadyInRoom) {
-                  console.error(`Player with ID ${currentPlayer.userID} is already in the room.`);
-                  return;
-                }
-                roomChooseToAdd.roomUsers.push({ name: currentPlayer.name, index: currentPlayer.userID });
-                console.log(roomChooseToAdd.roomUsers)
-                const idGame = generateUniq();
-
-                const createGameResponse = {
-                  type: "create_game",
-                  data: {
-                    idGame: idGame,
-                    idPlayer: currentPlayer.userID
-                  },
-                  id: 0
-                };
-                currentPlayer.ws.send(JSON.stringify(createGameResponse));
-                firstPlayer.ws.send(JSON.stringify(createGameResponse));
-          
-                roomDB.splice(roomDB.indexOf(roomChooseToAdd), 1);
-                console.log(`Player ${currentPlayer.name} added to room ${indexRoom}`);
-              } else {
-                console.error(`Player with ID ${userID} does not exist.`);
+        case TypesOfMessages.AddUserToRoom:
+          const parsedDataFromAdd = JSON.parse(parsedMessage.data);
+          console.log('parseddata', parsedDataFromAdd)
+          const indexRoom = parsedDataFromAdd.indexRoom;
+          console.log('indexroom', indexRoom)
+          const roomChooseToAdd = roomDB.find(room => room.roomID === indexRoom);
+          if (roomChooseToAdd) {
+            const currentPlayer = usersDB.find(user => user.ws === ws);
+            const firstPlayer = usersDB.find(user => user.userID === roomChooseToAdd.roomUsers[0]?.index);
+            console.log(roomChooseToAdd.roomUsers)
+            if (currentPlayer && firstPlayer) {
+              const playerAlreadyInRoom = roomChooseToAdd.roomUsers.some(user => user.index === currentPlayer.userID);
+              if (playerAlreadyInRoom) {
+                console.error(`Player with ID ${currentPlayer.userID} is already in the room.`);
+                return;
               }
+              roomChooseToAdd.roomUsers.push({ name: currentPlayer.name, index: currentPlayer.userID });
+              console.log(roomChooseToAdd.roomUsers)
+              const idGame = generateUniq();
+
+              const createGameResponse = {
+                type: "create_game",
+                data: JSON.stringify({
+                  idGame: idGame,
+                  idPlayer: currentPlayer.userID
+                }),
+                id: 0
+              };
+              currentPlayer.ws.send(JSON.stringify(createGameResponse));
+              firstPlayer.ws.send(JSON.stringify(createGameResponse));
+
+              roomDB.splice(roomDB.indexOf(roomChooseToAdd), 1);
+              console.log(`Player ${currentPlayer.name} added to room ${indexRoom}`);
             } else {
-              console.error(`Room with ID ${indexRoom} does not available.`);
+              console.error(`Player with ID ${userID} does not exist.`);
             }
-            updateRoomState(ws)
-            break;
+          } else {
+            console.error(`Room with ID ${indexRoom} does not available.`);
+          }
+          updateRoomState(ws)
+          break;
       }
     } catch (err) {
       console.error(`Parsing JSON error: ${err}`);
