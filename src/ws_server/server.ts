@@ -27,7 +27,7 @@ wsServer.on('connection', (ws) => {
         case TypesOfMessages.Reg:
           const parsedData = JSON.parse(parsedMessage.data);
           console.log('parsedData', parsedData)
-          const regResult = handlerReg(parsedData, userID);
+          const regResult = handlerReg(parsedData, userID, ws);
           const regResponse = {
             type: TypesOfMessages.Reg,
             data: JSON.stringify(regResult),
@@ -40,52 +40,72 @@ wsServer.on('connection', (ws) => {
           try {
             if (!roomDB.find(room => room.roomID === roomID)) {
               const currentPlayer = usersDB.find(user => user.userID === userID);
-              const newRoom: RoomData = {
-                roomID: roomID,
-                roomUsers: [{ name: currentPlayer?.name, index: userID }],
-              };
-              roomDB.push(newRoom);
-              const createRoomResponse = {
-                type: TypesOfMessages.CreateRoom,
-                data: JSON.stringify(newRoom),
-                id: 0
-              };
-              ws.send(JSON.stringify(createRoomResponse))
+              if (currentPlayer) {
+                const newRoom: RoomData = {
+                  roomID: roomID,
+                  roomUsers: [{ name: currentPlayer.name, index: userID }],
+                };
+                roomDB.push(newRoom);
+                const createRoomResponse = {
+                  type: TypesOfMessages.CreateRoom,
+                  data: JSON.stringify(newRoom),
+                  id: 0
+                };
+                ws.send(JSON.stringify(createRoomResponse))
+              }
+
+
             } else {
               console.log(`Room with ID ${roomID} already exists.`);
             }
             updateRoomState(ws)
           } catch (err) {
-            console.error('etooooooooooooooooooooo', err)
+            console.error(err)
           }
 
           break;
 
         case TypesOfMessages.AddUserToRoom:
-          console.log('parsedMessage', parsedMessage)
           const parsedDataFromAdd = JSON.parse(parsedMessage.data);
           console.log('parseddata', parsedDataFromAdd)
           const indexRoom = parsedDataFromAdd.indexRoom;
 
           console.log('indexroom', indexRoom)
-          const room = roomDB[indexRoom];
+          const room = roomDB.find(room =>room.roomID === indexRoom);
+          console.log('this is room', room)
           if (room) {
-            const player = usersDB.find(user => user.userID === userID);
+            const player = usersDB.find(user => user.ws === ws);
+            console.log(JSON.stringify(room.roomUsers), "these are roomusers")
             if (player) {
               room.roomUsers.push({
                 name: player.name,
                 index: userID,
               });
-              delete roomDB[indexRoom];
+console.log(JSON.stringify(room.roomUsers), "these are roomusers")
+              const idGame = generateUniq();
               const addUserResponse = {
                 type: TypesOfMessages.CreateGame,
                 data: JSON.stringify({
-                  idGame: generateUniq(),
-                  idPlayer: userID
+                  idGame: idGame,
+                  idPlayer: player.userID,
                 }),
                 id: 0
               };
-              ws.send(JSON.stringify(addUserResponse))
+              wsServer.clients.forEach(client => {
+                if (client.readyState === ws.OPEN) {
+                  client.send(JSON.stringify(addUserResponse));
+                }
+              });
+/*               room.roomUsers.forEach(roomUser => {
+                const player = usersDB.find(user => user.userID === roomUser.index);
+
+                if (player && player.ws) {
+                  console.log(1111)
+                  
+                  player.ws.send(JSON.stringify(addUserResponse));
+                }
+              }); */
+              roomDB.splice(indexRoom, 1);
               console.log(`Player ${player.name} added to room ${indexRoom}`);
             } else {
               console.error(`Player with ID ${userID} does not exist.`);
@@ -126,7 +146,7 @@ function updateRoomState(socket: WebSocket) {
   }));
 
 
-  console.log(onlyOnePlayerRooms)
+  console.log(updatedRoomsData)
   const updateRoomResponse = {
     type: TypesOfMessages.UpdateRoom,
     data: JSON.stringify(updatedRoomsData),

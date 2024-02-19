@@ -1,7 +1,8 @@
+import { WebSocket } from "ws";
 import { PlayerData, UserRegResponse } from "../types/types";
 //import { playerDB } from '../ws_server/server';
 import { usersDB } from "../ws_server/server";
-export const handlerReg = (data: PlayerData, id: number) => {
+export const handlerReg = (data: PlayerData, id: number, ws: WebSocket) => {
   /*   if (typeof id !== 'number' || isNaN(id)) {
       console.error('Invalid id:', id);
       return; 
@@ -39,7 +40,8 @@ export const handlerReg = (data: PlayerData, id: number) => {
   const newPlayer = {
     userID: id,
     name: playerName,
-    password: playerPassword
+    password: playerPassword, 
+    ws: ws,
   };
 usersDB.push(newPlayer)
   console.log(usersDB)
