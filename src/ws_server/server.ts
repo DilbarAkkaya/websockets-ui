@@ -49,6 +49,10 @@ wsServer.on('connection', (ws) => {
             console.log(`Player with ID ${userID} is already in a room.`);
             return;
           }
+          if (roomDB.some(room => room.roomUsers.length > 0)) {
+            console.log(`Other player already has an open room, so you, user with ID ${userID} cannot create a new one. Please, add yourself to room`);
+            return;
+          }
           const roomID = generateUniq();
           try {
             if (!roomDB.find(room => room.roomID === roomID)) {
