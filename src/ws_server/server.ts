@@ -101,7 +101,7 @@ wsServer.on('connection', (ws) => {
               console.log(roomChooseToAdd.roomUsers)
               const idGame = generateUniq();
 
-              const createGameResponse = {
+              const createGameResponse1 = {
                 type: "create_game",
                 data: JSON.stringify({
                   idGame: idGame,
@@ -109,8 +109,16 @@ wsServer.on('connection', (ws) => {
                 }),
                 id: 0
               };
-              currentPlayer.ws.send(JSON.stringify(createGameResponse));
-              firstPlayer.ws.send(JSON.stringify(createGameResponse));
+              const createGameResponse2 = {
+                type: "create_game",
+                data: JSON.stringify({
+                  idGame: idGame,
+                  idPlayer: firstPlayer.userID
+                }),
+                id: 0
+              };
+              currentPlayer.ws.send(JSON.stringify(createGameResponse1));
+              firstPlayer.ws.send(JSON.stringify(createGameResponse2));
 
               roomDB.splice(roomDB.indexOf(roomChooseToAdd), 1);
               console.log(`Player ${currentPlayer.name} added to room ${indexRoom}`);
