@@ -135,7 +135,8 @@ wsServer.on('connection', (ws) => {
           try {
             const parsedDataFromCreateGame = JSON.parse(parsedMessage.data);
             const shipsData = parsedDataFromCreateGame.ships;
-            const gameID = parsedDataFromCreateGame.idGame;
+            const gameID = parsedDataFromCreateGame.gameId;
+            console.log(gameID, 'id game add ships')
             const playerIndex = parsedDataFromCreateGame.indexPlayer;
             const player = {
               gameId: gameID,
@@ -172,11 +173,15 @@ wsServer.on('connection', (ws) => {
                   console.log(`Player ${item.indexPlayer} disconnected`);
                 });
               })
+
             }
+            console.log(gameDB, 'game  db');
           } catch (err) {
             console.error('Error handling AddShips message:', err);
           }
           break;
+
+
       }
     } catch (err) {
       console.error(`Parsing JSON error: ${err}`);

@@ -51,7 +51,7 @@ export interface UserRegResponse {
 }
 export interface RegistrationData {
   type: TypesOfMessages.Reg;
-  data:UserRegResponse;
+  data: UserRegResponse;
   id: 0;
 }
 /* export interface RoomIndex {
@@ -86,7 +86,7 @@ export interface AddShipsResponce {
 }
 
 export interface ICurrentPlayer {
-    currentPlayer: number;
+  currentPlayer: number;
 }
 
 export interface TurnResponse {
@@ -108,4 +108,27 @@ export interface StartGameResponce {
   type: TypesOfMessages.StartGame;
   data: IStartGame;
   id: 0;
+}
+export interface IAttack {
+  gameID: number;
+  x: IPosition;
+  y: IPosition;
+  indexPlayer: number;
+
+}
+export interface AttackResponce {
+  type: TypesOfMessages.Attack;
+  data: IAttack;
+  id: 0;
+}
+export enum Status {
+  Miss = 'miss',
+  Killed = 'killed',
+  Shot = 'shot',
+}
+
+export interface IAttackFeedback {
+  positions: IPosition;
+  currentPlayer: number;
+  status: Status;
 }
