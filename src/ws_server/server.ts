@@ -131,8 +131,6 @@ wsServer.on('connection', (ws) => {
           }
           updateRoomState(ws)
           break;
-
-
         case TypesOfMessages.AddShips:
           try {
             const parsedDataFromCreateGame = JSON.parse(parsedMessage.data);
@@ -145,61 +143,32 @@ wsServer.on('connection', (ws) => {
               indexPlayer: playerIndex,
             };
             gameDB.push(player);
-            const firstPlayer = gameDB.find(item => {
-              return item.indexPlayer === gameID;
-            })
-            const secondPlayer = gameDB.find(item => {
-              return item.indexPlayer !== firstPlayer?.indexPlayer && item.gameId === firstPlayer?.gameId;
-            });
             if (gameDB.length === 2) {
-              const startGameResponceFirst = {
-                type: TypesOfMessages.StartGame,
-                data: JSON.stringify({
-                  currentPlayerIndex: firstPlayer?.indexPlayer,
-                  ships: firstPlayer?.ships
-                }),
-                id: 0,
-              };
-              const startGameResponceSecond = {
-                type: TypesOfMessages.StartGame,
-                data: JSON.stringify({
-                  currentPlayerIndex: secondPlayer?.indexPlayer,
-                  ships: secondPlayer?.ships
-                }),
-                id: 0,
-              };
-
-              const firstPlayerIndex = firstPlayer?.indexPlayer;
-              const secondPlayerIndex = secondPlayer?.indexPlayer;
-
-              wsServer.clients.forEach(client => {
-                if (wsUserMap.get(client) === firstPlayerIndex) {
-                  client.send(JSON.stringify(startGameResponceFirst));
-                }
-              });
-              wsServer.clients.forEach(client => {
-                if (wsUserMap.get(client) === secondPlayerIndex) {
-                  client.send(JSON.stringify(startGameResponceSecond));
-                }
-              });
               const turnData = {
                 type: TypesOfMessages.Turn,
                 data: JSON.stringify({
-                  currentPlayer: firstPlayerIndex,
+                  currentPlayer: playerIndex
                 }),
                 id: 0,
               };
-              wsServer.clients.forEach(client => {
-                if (wsUserMap.get(client) === firstPlayerIndex) {
-                  client.send(JSON.stringify(turnData));
-                }
-              });
-
-              wsServer.clients.forEach(client => {
-                if (wsUserMap.get(client) === secondPlayerIndex) {
-                  client.send(JSON.stringify(turnData));
-                }
-              });
+              gameDB.forEach(item => {
+                const startGameResponceFirst = {
+                  type: TypesOfMessages.StartGame,
+                  data: JSON.stringify({
+                    currentPlayerIndex: item.indexPlayer,
+                    ships: item.ships,
+                  }),
+                  id: 0,
+                };
+                let playerSocket: WebSocket | undefined;
+                wsUserMap.forEach((userID, socket) => {
+                  if (userID === item.indexPlayer) {
+                    playerSocket = socket;
+                  }
+                });
+                playerSocket?.send(JSON.stringify(startGameResponceFirst));
+                playerSocket?.send(JSON.stringify(turnData));
+              })
             }
           } catch (err) {
             console.error('Error handling AddShips message:', err);
