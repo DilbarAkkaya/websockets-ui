@@ -18,7 +18,8 @@ export enum TypesOfMessages {
   UpdateRoom = 'update_room',
   UpdateWinners = 'update_winners',
   CreateRoom = 'create_room',
-  AddUserToRoom = 'add_user_to_room'
+  AddUserToRoom = 'add_user_to_room',
+  AddShips = 'add_ships'
 }
 
 export interface PlayerData {
@@ -61,3 +62,50 @@ export interface AddUser {
   data: RoomIndex;
   id: 0;
 } */
+
+export interface IPosition {
+  x: number;
+  y: number;
+}
+export enum TypesOfTypeShip {
+  Small = 'small',
+  Medium = 'medium',
+  Large = 'large',
+  Huge = 'huge',
+}
+export interface IShip {
+  position: IPosition;
+  direction: boolean;
+  length: number;
+  type: TypesOfTypeShip;
+}
+export interface AddShipsResponce {
+  type: TypesOfMessages.AddShips;
+  data: IGame;
+  id: 0;
+}
+
+export interface ICurrentPlayer {
+    currentPlayer: number;
+}
+
+export interface TurnResponse {
+  type: TypesOfMessages.Turn;
+  data: ICurrentPlayer
+  id: 0;
+}
+export interface IGame {
+  gameId: number;
+  ships: IShip[];
+  indexPlayer: number;
+}
+
+export interface IStartGame {
+  ships: IShip[];
+  currentPlayerIndex: number;
+}
+export interface StartGameResponce {
+  type: TypesOfMessages.StartGame;
+  data: IStartGame;
+  id: 0;
+}

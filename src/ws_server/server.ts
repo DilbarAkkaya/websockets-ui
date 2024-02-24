@@ -1,12 +1,13 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
 import { handlerReg } from '../handlers/regHandler';
-import { TypesOfMessages } from '../types/types';
+import { IGame, TypesOfMessages } from '../types/types';
 dotenv.config();
 import { PlayerData, RoomData } from "../types/types";
 
 export const usersDB: PlayerData[] = [];
 export const roomDB: RoomData[] = [];
+export const gameDB: IGame[] = [];
 const PORT = process.env.PORT || 8080;
 const wsServer = new WebSocketServer({ port: Number(PORT) })
 
@@ -129,6 +130,80 @@ wsServer.on('connection', (ws) => {
             console.error(`Room with ID ${indexRoom} does not available.`);
           }
           updateRoomState(ws)
+          break;
+
+
+        case TypesOfMessages.AddShips:
+          try {
+            const parsedDataFromCreateGame = JSON.parse(parsedMessage.data);
+            const shipsData = parsedDataFromCreateGame.ships;
+            const gameID = parsedDataFromCreateGame.idGame;
+            const playerIndex = parsedDataFromCreateGame.indexPlayer;
+            const player = {
+              gameId: gameID,
+              ships: shipsData,
+              indexPlayer: playerIndex,
+            };
+            gameDB.push(player);
+            const firstPlayer = gameDB.find(item => {
+              return item.indexPlayer === gameID;
+            })
+            const secondPlayer = gameDB.find(item => {
+              return item.indexPlayer !== firstPlayer?.indexPlayer && item.gameId === firstPlayer?.gameId;
+            });
+            if (gameDB.length === 2) {
+              const startGameResponceFirst = {
+                type: TypesOfMessages.StartGame,
+                data: JSON.stringify({
+                  currentPlayerIndex: firstPlayer?.indexPlayer,
+                  ships: firstPlayer?.ships
+                }),
+                id: 0,
+              };
+              const startGameResponceSecond = {
+                type: TypesOfMessages.StartGame,
+                data: JSON.stringify({
+                  currentPlayerIndex: secondPlayer?.indexPlayer,
+                  ships: secondPlayer?.ships
+                }),
+                id: 0,
+              };
+
+              const firstPlayerIndex = firstPlayer?.indexPlayer;
+              const secondPlayerIndex = secondPlayer?.indexPlayer;
+
+              wsServer.clients.forEach(client => {
+                if (wsUserMap.get(client) === firstPlayerIndex) {
+                  client.send(JSON.stringify(startGameResponceFirst));
+                }
+              });
+              wsServer.clients.forEach(client => {
+                if (wsUserMap.get(client) === secondPlayerIndex) {
+                  client.send(JSON.stringify(startGameResponceSecond));
+                }
+              });
+              const turnData = {
+                type: TypesOfMessages.Turn,
+                data: JSON.stringify({
+                  currentPlayer: firstPlayerIndex,
+                }),
+                id: 0,
+              };
+              wsServer.clients.forEach(client => {
+                if (wsUserMap.get(client) === firstPlayerIndex) {
+                  client.send(JSON.stringify(turnData));
+                }
+              });
+
+              wsServer.clients.forEach(client => {
+                if (wsUserMap.get(client) === secondPlayerIndex) {
+                  client.send(JSON.stringify(turnData));
+                }
+              });
+            }
+          } catch (err) {
+            console.error('Error handling AddShips message:', err);
+          }
           break;
       }
     } catch (err) {
