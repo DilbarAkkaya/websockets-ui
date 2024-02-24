@@ -168,6 +168,9 @@ wsServer.on('connection', (ws) => {
                 });
                 playerSocket?.send(JSON.stringify(startGameResponceFirst));
                 playerSocket?.send(JSON.stringify(turnData));
+                playerSocket?.on('close', () => {
+                  console.log(`Player ${item.indexPlayer} disconnected`);
+                });
               })
             }
           } catch (err) {
