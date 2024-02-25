@@ -44,7 +44,6 @@ export const handlerReg = (data: PlayerData, id: number, ws: WebSocket) => {
     ws: ws,
   };
 usersDB.push(newPlayer)
-  console.log(usersDB)
   console.log(`Player id ${id} with name ${playerName} added to playerDB`);
   return regData;
 };

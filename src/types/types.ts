@@ -77,7 +77,8 @@ export interface IShip {
   position: IPosition;
   direction: boolean;
   length: number;
-  type: TypesOfTypeShip;
+  type: Status;
+  hits: number;
 }
 export interface AddShipsResponce {
   type: TypesOfMessages.AddShips;
@@ -94,10 +95,14 @@ export interface TurnResponse {
   data: ICurrentPlayer
   id: 0;
 }
+
 export interface IGame {
   gameId: number;
-  ships: IShip[];
+  ships: TWODArray;
   indexPlayer: number;
+  isCurrentPlayer: number;
+  addTurn: number;
+  previousAttacks: IPosition[];
 }
 
 export interface IStartGame {
@@ -110,9 +115,9 @@ export interface StartGameResponce {
   id: 0;
 }
 export interface IAttack {
-  gameID: number;
-  x: IPosition;
-  y: IPosition;
+  gameId: number;
+  x: number;
+  y: number;
   indexPlayer: number;
 
 }
@@ -125,10 +130,21 @@ export enum Status {
   Miss = 'miss',
   Killed = 'killed',
   Shot = 'shot',
+  Large = 'large',
+  Medium = 'medium',
+  Small = 'small',
+  Empty = 'empty'
 }
+
+export type TWODArray = Status[][];
 
 export interface IAttackFeedback {
   positions: IPosition;
   currentPlayer: number;
   status: Status;
+}
+export interface ICell {
+  x: number;
+  y: number;
+  hit: boolean;
 }
