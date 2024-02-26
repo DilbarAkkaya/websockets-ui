@@ -61,7 +61,7 @@ wsServer.on('connection', (ws) => {
           break;
         case TypesOfMessages.CreateRoom:
           if (roomDB.some(room => room.roomUsers.some(user => user.index === wsUserMap.get(ws)?.userID))) {
-            console.log(`Player with ID ${wsUserMap.get(ws)?.userID} is already in a room.`);
+            console.log(`Player with ID ${wsUserMap.get(ws)?.userID} is already in the room.`);
             return;
           }
           if (roomDB.some(room => room.roomUsers.length > 0)) {
