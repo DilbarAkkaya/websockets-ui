@@ -1,13 +1,11 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
-//import { handlerReg } from '../handlers/regHandler';
 import { IAttack, IGame, Status, TWODArray, TypesOfMessages } from '../types/types';
 import { locateShips } from '../utils/locateShips';
 dotenv.config();
 import { PlayerData, RoomData } from "../types/types";
 import { generateUniq } from '../utils/generateUniq';
 
-export const usersDB: PlayerData[] = [];
 export const roomDB: RoomData[] = [];
 export const gameDB: IGame[] = [];
 const PORT = process.env.PORT || 8080;
@@ -23,15 +21,11 @@ wsServer.on('connection', (ws) => {
   ws.on('message', (message) => {
     const messageString = message.toString('utf-8');
     const parsedMessage = JSON.parse(messageString);
-    //let userID:number;
     try {
       switch (parsedMessage.type) {
         case TypesOfMessages.Reg:
           const parsedData = JSON.parse(parsedMessage.data);
-          console.log(parsedData)
-          //const isValid = [...wsUserMap.values()].every(item => item.name !== parsedData.name);
           const isValid = [...wsUserMap.values()].some(item => item.name === parsedData.name);
-          //const errorText = isValid ? '': 'User is already in use';
           console.log([...wsUserMap.values()])
           console.log('parsedData', parsedData);
           const user = {
@@ -40,35 +34,23 @@ wsServer.on('connection', (ws) => {
             userID: generateUniq(),
             ws: ws,
           }
-        // usersDB.push(user);
           wsUserMap.set(ws, user);
           let obj = {}
-          
-if (isValid) {
-  obj = {
-    name: user.name,
-    index: user.userID,
-    error: isValid,
-    errorText: 'User already exists',
-  }
-} else {
-  obj = {
-    name: user.name,
-    index: user.userID,
-    error: isValid,
-    errorText: '',
-  }
-}
-      
-  /*         const dataForResponce = {
-            name: user.name,
-            index: user.userID,
-            error: isValid,
-            errorText: isValid ? '': 'sdlfkhblgklkh',
-          } */
-          //const text = isValid ? '': `User with ${user.name} is already use`;
-          console.log(isValid)
-          // const regResult = handlerReg(parsedData, userID, ws);
+          if (isValid) {
+            obj = {
+              name: user.name,
+              index: user.userID,
+              error: isValid,
+              errorText: 'User already exists',
+            }
+          } else {
+            obj = {
+              name: user.name,
+              index: user.userID,
+              error: isValid,
+              errorText: '',
+            }
+          }
           const regResponse = {
             type: TypesOfMessages.Reg,
             data: JSON.stringify(obj),
