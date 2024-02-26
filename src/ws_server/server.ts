@@ -11,13 +11,9 @@ export const roomDB: RoomData[] = [];
 export const gameDB: IGame[] = [];
 const PORT = process.env.PORT || 8080;
 const wsServer = new WebSocketServer({ port: Number(PORT) });
-
-wsServer.on('listening', () => {
-  console.log(`WebSocket server parameters: PORT: ${JSON.stringify(wsServer.options.port)}`);
-})
 export const wsUserMap: Map<WebSocket, PlayerData> = new Map();
 wsServer.on('connection', (ws) => {
-
+  console.log(`WebSocket server parameters: PORT: ${JSON.stringify(wsServer.options.port)}`);
   ws.on('message', (message) => {
     const messageString = message.toString('utf-8');
     const parsedMessage = JSON.parse(messageString);
