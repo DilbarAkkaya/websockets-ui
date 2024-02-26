@@ -1,9 +1,11 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
 import { handlerReg } from '../handlers/regHandler';
-import { IAttack, IGame, IShip, Status, TWODArray, TypesOfMessages } from '../types/types';
+import { IAttack, IGame, Status, TWODArray, TypesOfMessages } from '../types/types';
+import { locateShips } from '../utils/locateShips';
 dotenv.config();
 import { PlayerData, RoomData } from "../types/types";
+import { generateUniq } from '../utils/generateUniq';
 
 export const usersDB: PlayerData[] = [];
 export const roomDB: RoomData[] = [];
@@ -259,12 +261,7 @@ wsServer.on('connection', (ws) => {
   });
 });
 
-function generateUniq() {
-  const timestamp = Date.now();
-  const randomNum = Math.floor(Math.random() * 1000000);
-  const id = timestamp * 1000000 + randomNum;
-  return id;
-}
+
 
 function updateRoomState(socket: WebSocket) {
   const onlyOnePlayerRooms = roomDB.filter(room => room.roomUsers.length === 1);
@@ -320,40 +317,7 @@ function checkShipKillShot(twoDArrayShips: TWODArray, x: number, y: number): boo
   return true;
 };
 
-function locateShips(ships: IShip[]): TWODArray {
-  const size = 10;
-  const twoDArray: TWODArray = Array.from({ length: size }, () =>
-    Array<Status>(size).fill(Status.Empty)
-  );
-  for (const ship of ships) {
-    const { direction, type, position } = ship;
-    const x: number = position.x;
-    const y: number = position.y;
-    if (x < 0 || x >= size || y < 0 || y >= size) {
-      console.error(`Ship ${type} is out of field`);
-      continue;
-    }
-    for (let i = 0; i < ship.length; i++) {
-      let cellX: number = x;
-      let cellY: number = y;
-      if (direction) {
-        cellY += i;
-      } else {
-        cellX += i;
-      };
-      if (cellX < 0 || cellX >= size || cellY < 0 || cellY >= size) {
-        console.error(`Ship  ${type} is out of field`);
-        continue;
-      };
-      if ((twoDArray[cellY] as any[])[cellX] !== Status.Empty) {
-        console.error(`Ship ${type} is mixed wit other ship`);
-        break;
-      };
-      (twoDArray[cellY] as any[])[cellX] = type;
-    };
-  };
-  return twoDArray;
-};
+
 
 /* function updateField(attackData: string) {
   try {
