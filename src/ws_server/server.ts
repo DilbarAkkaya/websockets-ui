@@ -1,6 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
-import { handlerReg } from '../handlers/regHandler';
+//import { handlerReg } from '../handlers/regHandler';
 import { IAttack, IGame, Status, TWODArray, TypesOfMessages } from '../types/types';
 import { locateShips } from '../utils/locateShips';
 dotenv.config();
@@ -17,50 +17,83 @@ wsServer.on('listening', () => {
   console.log(`WS Server is starting on the ${PORT} `);
   console.log(`WebSocket server parameters: ${JSON.stringify(wsServer.options.port)}`);
 })
-const wsUserMap: Map<WebSocket, number> = new Map();
+export const wsUserMap: Map<WebSocket, PlayerData> = new Map();
 wsServer.on('connection', (ws) => {
-  const userID = generateUniq();
-  wsUserMap.set(ws, userID);
+
   ws.on('message', (message) => {
     const messageString = message.toString('utf-8');
     const parsedMessage = JSON.parse(messageString);
-    const userID: number | undefined = wsUserMap.get(ws);
-    if (!userID) {
-      console.error('UserID not found for ws');
-      return;
-    }
-    console.log('parsedMessage', parsedMessage)
+    //let userID:number;
     try {
       switch (parsedMessage.type) {
         case TypesOfMessages.Reg:
           const parsedData = JSON.parse(parsedMessage.data);
-          console.log('parsedData', parsedData)
-          const regResult = handlerReg(parsedData, userID, ws);
+          console.log(parsedData)
+          //const isValid = [...wsUserMap.values()].every(item => item.name !== parsedData.name);
+          const isValid = [...wsUserMap.values()].some(item => item.name === parsedData.name);
+          //const errorText = isValid ? '': 'User is already in use';
+          console.log([...wsUserMap.values()])
+          console.log('parsedData', parsedData);
+          const user = {
+            name: parsedData.name,
+            password: parsedData.password,
+            userID: generateUniq(),
+            ws: ws,
+          }
+        // usersDB.push(user);
+          wsUserMap.set(ws, user);
+          let obj = {}
+          
+if (isValid) {
+  obj = {
+    name: user.name,
+    index: user.userID,
+    error: isValid,
+    errorText: 'User already exists',
+  }
+} else {
+  obj = {
+    name: user.name,
+    index: user.userID,
+    error: isValid,
+    errorText: '',
+  }
+}
+      
+  /*         const dataForResponce = {
+            name: user.name,
+            index: user.userID,
+            error: isValid,
+            errorText: isValid ? '': 'sdlfkhblgklkh',
+          } */
+          //const text = isValid ? '': `User with ${user.name} is already use`;
+          console.log(isValid)
+          // const regResult = handlerReg(parsedData, userID, ws);
           const regResponse = {
             type: TypesOfMessages.Reg,
-            data: JSON.stringify(regResult),
+            data: JSON.stringify(obj),
             id: 0,
           }
           ws.send(JSON.stringify(regResponse));
           updateRoomState(ws);
           break;
         case TypesOfMessages.CreateRoom:
-          if (roomDB.some(room => room.roomUsers.some(user => user.index === userID))) {
-            console.log(`Player with ID ${userID} is already in a room.`);
+          if (roomDB.some(room => room.roomUsers.some(user => user.index === wsUserMap.get(ws)?.userID))) {
+            console.log(`Player with ID ${wsUserMap.get(ws)?.userID} is already in a room.`);
             return;
           }
           if (roomDB.some(room => room.roomUsers.length > 0)) {
-            console.log(`Other player already open room, user with ID ${userID} cannot create a new one. Please, add yourself to room`);
+            console.log(`Other player already open room, user with ID ${wsUserMap.get(ws)?.userID} cannot create a new one. Please, add yourself to room`);
             return;
           }
           const roomID = generateUniq();
           try {
             if (!roomDB.find(room => room.roomID === roomID)) {
-              const currentPlayer = usersDB.find(user => user.userID === userID);
+              const currentPlayer = [...wsUserMap.values()].find(user => user.userID === wsUserMap.get(ws)?.userID);
               if (currentPlayer) {
                 const newRoom: RoomData = {
                   roomID: roomID,
-                  roomUsers: [{ name: currentPlayer.name, index: userID }],
+                  roomUsers: [{ name: currentPlayer.name, index: currentPlayer.userID }],
                 };
                 roomDB.push(newRoom);
                 const createRoomResponse = {
@@ -83,8 +116,8 @@ wsServer.on('connection', (ws) => {
           const indexRoom = parsedDataFromAdd.indexRoom;
           const roomChooseToAdd = roomDB.find(room => room.roomID === indexRoom);
           if (roomChooseToAdd) {
-            const currentPlayer = usersDB.find(user => user.ws === ws);
-            const firstPlayer = usersDB.find(user => user.userID === roomChooseToAdd.roomUsers[0]?.index);
+            const currentPlayer = [...wsUserMap.values()].find(user => user.ws === ws);
+            const firstPlayer = [...wsUserMap.values()].find(user => user.userID === roomChooseToAdd.roomUsers[0]?.index);
             if (currentPlayer && firstPlayer) {
               const playerAlreadyInRoom = roomChooseToAdd.roomUsers.some(user => user.index === currentPlayer.userID);
               if (playerAlreadyInRoom) {
@@ -114,7 +147,7 @@ wsServer.on('connection', (ws) => {
               roomDB.splice(roomDB.indexOf(roomChooseToAdd), 1);
               console.log(`Player ${currentPlayer.name} added to room ${indexRoom}`);
             } else {
-              console.error(`Player with ID ${userID} does not exist.`);
+              console.error(`Player with ID ${currentPlayer?.userID} does not exist.`);
             }
           } else {
             console.error(`Room with ID ${indexRoom} does not available.`);
@@ -155,8 +188,8 @@ wsServer.on('connection', (ws) => {
                   id: 0,
                 };
                 let playerSocket: WebSocket | undefined;
-                wsUserMap.forEach((userID, socket) => {
-                  if (userID === item.indexPlayer) {
+                wsUserMap.forEach((playerData, socket) => {
+                  if (playerData.userID === item.indexPlayer) {
                     playerSocket = socket;
                   };
                 });
@@ -215,7 +248,7 @@ wsServer.on('connection', (ws) => {
               id: 0,
             };
             gameDB.forEach(item => {
-              const playerSocketFromUserMap = Array.from(wsUserMap.entries()).find(entry => entry[1] === item.indexPlayer);
+              const playerSocketFromUserMap = Array.from(wsUserMap.entries()).find(entry => entry[1].userID === item.indexPlayer);
               const playerSocket = playerSocketFromUserMap ? playerSocketFromUserMap[0] : undefined;
               if (playerSocket) {
                 playerSocket.send(JSON.stringify(attackFeedback));
@@ -233,7 +266,7 @@ wsServer.on('connection', (ws) => {
                 id: 0,
               };
               gameDB.forEach(item => {
-                const playerSocketFromUserMap = Array.from(wsUserMap.entries()).find(entry => entry[1] === item.indexPlayer);
+                const playerSocketFromUserMap = Array.from(wsUserMap.entries()).find(entry => entry[1].userID === item.indexPlayer);
                 const playerSocket = playerSocketFromUserMap ? playerSocketFromUserMap[0] : undefined;
                 if (playerSocket) {
                   console.log("Sending turn data to player:", item.indexPlayer);
