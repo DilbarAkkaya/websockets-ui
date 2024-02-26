@@ -12,8 +12,7 @@ const PORT = process.env.PORT || 8080;
 const wsServer = new WebSocketServer({ port: Number(PORT) });
 
 wsServer.on('listening', () => {
-  console.log(`WS Server is starting on the ${PORT} `);
-  console.log(`WebSocket server parameters: ${JSON.stringify(wsServer.options.port)}`);
+  console.log(`WebSocket server parameters: PORT: ${JSON.stringify(wsServer.options.port)}`);
 })
 export const wsUserMap: Map<WebSocket, PlayerData> = new Map();
 wsServer.on('connection', (ws) => {
