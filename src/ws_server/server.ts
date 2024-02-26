@@ -1,10 +1,11 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
-import { IAttack, IGame, Status, TWODArray, TypesOfMessages } from '../types/types';
+import { IAttack, IGame, Status, TypesOfMessages } from '../types/types';
 import { locateShips } from '../utils/locateShips';
 dotenv.config();
 import { PlayerData, RoomData } from "../types/types";
 import { generateUniq } from '../utils/generateUniq';
+import { getAttackStatus } from '../utils/updateRoomState';
 
 export const roomDB: RoomData[] = [];
 export const gameDB: IGame[] = [];
@@ -299,34 +300,6 @@ function updateRoomState(socket: WebSocket) {
   });
 };
 
-function getAttackStatus(game: IGame, x: number, y: number): Status.Miss | Status.Killed | Status.Shot {
-  const isAttack = game.previousAttacks.some(attack =>
-    attack.x === x && attack.y === y
-  );
-  if (isAttack) {
-    return Status.Miss;
-  }
-  const cellValue = (game.ships[y] as any[])[x];
-  if (cellValue && (cellValue === Status.Medium || cellValue === Status.Large || cellValue === Status.Small)) {
-    (game.ships[y] as any[])[x] = Status.Shot;
-    const shipKillShot = checkShipKillShot(game.ships, x, y);
-    return shipKillShot ? Status.Killed : Status.Shot;
-  } else {
-    return Status.Miss;
-  }
-}
 
-function checkShipKillShot(twoDArrayShips: TWODArray, x: number, y: number): boolean {
-  const cellValue = (twoDArrayShips[y] as any[])[x];
-  if (cellValue !== Status.Large && cellValue !== Status.Medium && cellValue !== Status.Small) {
-    return false;
-  };
-  for (let i = 0; i < twoDArrayShips.length; i++) {
-    for (let j = 0; j < (twoDArrayShips[i] as any[]).length; j++) {
-      if ((twoDArrayShips[i] as any[])[j] === cellValue) {
-        return false;
-      };
-    };
-  };
-  return true;
-};
+
+
