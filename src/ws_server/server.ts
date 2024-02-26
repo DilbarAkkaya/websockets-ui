@@ -1,64 +1,76 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
-import { handlerReg } from '../handlers/regHandler';
-import { IAttack, IGame, IShip, Status, TWODArray, TypesOfMessages } from '../types/types';
+import { IAttack, IGame, Status, TypesOfMessages } from '../types/types';
+import { locateShips } from '../utils/locateShips';
 dotenv.config();
 import { PlayerData, RoomData } from "../types/types";
+import { generateUniq } from '../utils/generateUniq';
+import { getAttackStatus } from '../utils/updateRoomState';
 
-export const usersDB: PlayerData[] = [];
 export const roomDB: RoomData[] = [];
 export const gameDB: IGame[] = [];
 const PORT = process.env.PORT || 8080;
 const wsServer = new WebSocketServer({ port: Number(PORT) });
-
-wsServer.on('listening', () => {
-  console.log(`WS Server is starting on the ${PORT} `);
-  console.log(`WebSocket server parameters: ${JSON.stringify(wsServer.options.port)}`);
-})
-const wsUserMap: Map<WebSocket, number> = new Map();
+export const wsUserMap: Map<WebSocket, PlayerData> = new Map();
 wsServer.on('connection', (ws) => {
-  const userID = generateUniq();
-  wsUserMap.set(ws, userID);
+  console.log(`WebSocket server is starting parameters: PORT: ${JSON.stringify(wsServer.options.port)}`);
   ws.on('message', (message) => {
     const messageString = message.toString('utf-8');
     const parsedMessage = JSON.parse(messageString);
-    const userID: number | undefined = wsUserMap.get(ws);
-    if (!userID) {
-      console.error('UserID not found for ws');
-      return;
-    }
-    console.log('parsedMessage', parsedMessage)
+    console.log('recieved message:', parsedMessage);
     try {
       switch (parsedMessage.type) {
         case TypesOfMessages.Reg:
           const parsedData = JSON.parse(parsedMessage.data);
-          console.log('parsedData', parsedData)
-          const regResult = handlerReg(parsedData, userID, ws);
+          const isValid = [...wsUserMap.values()].some(item => item.name === parsedData.name);
+          const user = {
+            name: parsedData.name,
+            password: parsedData.password,
+            userID: generateUniq(),
+            ws: ws,
+          }
+          wsUserMap.set(ws, user);
+          let obj = {}
+          if (isValid) {
+            obj = {
+              name: user.name,
+              index: user.userID,
+              error: isValid,
+              errorText: 'User already exists',
+            }
+          } else {
+            obj = {
+              name: user.name,
+              index: user.userID,
+              error: isValid,
+              errorText: '',
+            }
+          }
           const regResponse = {
             type: TypesOfMessages.Reg,
-            data: JSON.stringify(regResult),
+            data: JSON.stringify(obj),
             id: 0,
           }
           ws.send(JSON.stringify(regResponse));
           updateRoomState(ws);
           break;
         case TypesOfMessages.CreateRoom:
-          if (roomDB.some(room => room.roomUsers.some(user => user.index === userID))) {
-            console.log(`Player with ID ${userID} is already in a room.`);
+          if (roomDB.some(room => room.roomUsers.some(user => user.index === wsUserMap.get(ws)?.userID))) {
+            console.log(`Player with ID ${wsUserMap.get(ws)?.userID} is already in the room.`);
             return;
           }
           if (roomDB.some(room => room.roomUsers.length > 0)) {
-            console.log(`Other player already open room, user with ID ${userID} cannot create a new one. Please, add yourself to room`);
+            console.log(`Other player already open room, user with ID ${wsUserMap.get(ws)?.userID} cannot create a new one. Please, add yourself to room`);
             return;
           }
           const roomID = generateUniq();
           try {
             if (!roomDB.find(room => room.roomID === roomID)) {
-              const currentPlayer = usersDB.find(user => user.userID === userID);
+              const currentPlayer = [...wsUserMap.values()].find(user => user.userID === wsUserMap.get(ws)?.userID);
               if (currentPlayer) {
                 const newRoom: RoomData = {
                   roomID: roomID,
-                  roomUsers: [{ name: currentPlayer.name, index: userID }],
+                  roomUsers: [{ name: currentPlayer.name, index: currentPlayer.userID }],
                 };
                 roomDB.push(newRoom);
                 const createRoomResponse = {
@@ -81,8 +93,8 @@ wsServer.on('connection', (ws) => {
           const indexRoom = parsedDataFromAdd.indexRoom;
           const roomChooseToAdd = roomDB.find(room => room.roomID === indexRoom);
           if (roomChooseToAdd) {
-            const currentPlayer = usersDB.find(user => user.ws === ws);
-            const firstPlayer = usersDB.find(user => user.userID === roomChooseToAdd.roomUsers[0]?.index);
+            const currentPlayer = [...wsUserMap.values()].find(user => user.ws === ws);
+            const firstPlayer = [...wsUserMap.values()].find(user => user.userID === roomChooseToAdd.roomUsers[0]?.index);
             if (currentPlayer && firstPlayer) {
               const playerAlreadyInRoom = roomChooseToAdd.roomUsers.some(user => user.index === currentPlayer.userID);
               if (playerAlreadyInRoom) {
@@ -112,7 +124,7 @@ wsServer.on('connection', (ws) => {
               roomDB.splice(roomDB.indexOf(roomChooseToAdd), 1);
               console.log(`Player ${currentPlayer.name} added to room ${indexRoom}`);
             } else {
-              console.error(`Player with ID ${userID} does not exist.`);
+              console.error(`Player with ID ${currentPlayer?.userID} does not exist.`);
             }
           } else {
             console.error(`Room with ID ${indexRoom} does not available.`);
@@ -153,8 +165,8 @@ wsServer.on('connection', (ws) => {
                   id: 0,
                 };
                 let playerSocket: WebSocket | undefined;
-                wsUserMap.forEach((userID, socket) => {
-                  if (userID === item.indexPlayer) {
+                wsUserMap.forEach((playerData, socket) => {
+                  if (playerData.userID === item.indexPlayer) {
                     playerSocket = socket;
                   };
                 });
@@ -213,7 +225,7 @@ wsServer.on('connection', (ws) => {
               id: 0,
             };
             gameDB.forEach(item => {
-              const playerSocketFromUserMap = Array.from(wsUserMap.entries()).find(entry => entry[1] === item.indexPlayer);
+              const playerSocketFromUserMap = Array.from(wsUserMap.entries()).find(entry => entry[1].userID === item.indexPlayer);
               const playerSocket = playerSocketFromUserMap ? playerSocketFromUserMap[0] : undefined;
               if (playerSocket) {
                 playerSocket.send(JSON.stringify(attackFeedback));
@@ -231,7 +243,7 @@ wsServer.on('connection', (ws) => {
                 id: 0,
               };
               gameDB.forEach(item => {
-                const playerSocketFromUserMap = Array.from(wsUserMap.entries()).find(entry => entry[1] === item.indexPlayer);
+                const playerSocketFromUserMap = Array.from(wsUserMap.entries()).find(entry => entry[1].userID === item.indexPlayer);
                 const playerSocket = playerSocketFromUserMap ? playerSocketFromUserMap[0] : undefined;
                 if (playerSocket) {
                   console.log("Sending turn data to player:", item.indexPlayer);
@@ -259,12 +271,7 @@ wsServer.on('connection', (ws) => {
   });
 });
 
-function generateUniq() {
-  const timestamp = Date.now();
-  const randomNum = Math.floor(Math.random() * 1000000);
-  const id = timestamp * 1000000 + randomNum;
-  return id;
-}
+
 
 function updateRoomState(socket: WebSocket) {
   const onlyOnePlayerRooms = roomDB.filter(room => room.roomUsers.length === 1);
@@ -288,90 +295,6 @@ function updateRoomState(socket: WebSocket) {
   });
 };
 
-function getAttackStatus(game: IGame, x: number, y: number): Status.Miss | Status.Killed | Status.Shot {
-  const isAttack = game.previousAttacks.some(attack =>
-    attack.x === x && attack.y === y
-  );
-  if (isAttack) {
-    return Status.Miss;
-  }
-  const cellValue = (game.ships[y] as any[])[x];
-  if (cellValue && (cellValue === Status.Medium || cellValue === Status.Large || cellValue === Status.Small)) {
-    (game.ships[y] as any[])[x] = Status.Shot;
-    const shipKillShot = checkShipKillShot(game.ships, x, y);
-    return shipKillShot ? Status.Killed : Status.Shot;
-  } else {
-    return Status.Miss;
-  }
-}
 
-function checkShipKillShot(twoDArrayShips: TWODArray, x: number, y: number): boolean {
-  const cellValue = (twoDArrayShips[y] as any[])[x];
-  if (cellValue !== Status.Large && cellValue !== Status.Medium && cellValue !== Status.Small) {
-    return false;
-  };
-  for (let i = 0; i < twoDArrayShips.length; i++) {
-    for (let j = 0; j < (twoDArrayShips[i] as any[]).length; j++) {
-      if ((twoDArrayShips[i] as any[])[j] === cellValue) {
-        return false;
-      };
-    };
-  };
-  return true;
-};
 
-function locateShips(ships: IShip[]): TWODArray {
-  const size = 10;
-  const twoDArray: TWODArray = Array.from({ length: size }, () =>
-    Array<Status>(size).fill(Status.Empty)
-  );
-  for (const ship of ships) {
-    const { direction, type, position } = ship;
-    const x: number = position.x;
-    const y: number = position.y;
-    if (x < 0 || x >= size || y < 0 || y >= size) {
-      console.error(`Ship ${type} is out of field`);
-      continue;
-    }
-    for (let i = 0; i < ship.length; i++) {
-      let cellX: number = x;
-      let cellY: number = y;
-      if (direction) {
-        cellY += i;
-      } else {
-        cellX += i;
-      };
-      if (cellX < 0 || cellX >= size || cellY < 0 || cellY >= size) {
-        console.error(`Ship  ${type} is out of field`);
-        continue;
-      };
-      if ((twoDArray[cellY] as any[])[cellX] !== Status.Empty) {
-        console.error(`Ship ${type} is mixed wit other ship`);
-        break;
-      };
-      (twoDArray[cellY] as any[])[cellX] = type;
-    };
-  };
-  return twoDArray;
-};
 
-/* function updateField(attackData: string) {
-  try {
-    const { position, currentPlayer, status } = JSON.parse(attackData);
-    console.log('data from attack', status)
-    const { x, y } = JSON.parse(position);
-    const enemyField = gameDB.find(game => game.isCurrentPlayer !== currentPlayer);
-    if (enemyField) {
-      const twoDArrayEnemy = enemyField.ships;
-      if (status === Status.Shot || status === Status.Killed) {
-        (twoDArrayEnemy[y] as any[])[x] = Status.Shot;
-      } else if (status === Status.Miss) {
-        (twoDArrayEnemy[y] as any[])[x] = Status.Miss;
-      }
-    } else {
-      console.error('Enemy field not found.');
-    }
-  } catch (err) {
-    console.error('Error updating', err);
-  }
-} */
