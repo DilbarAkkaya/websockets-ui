@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 8080;
 const wsServer = new WebSocketServer({ port: Number(PORT) });
 export const wsUserMap: Map<WebSocket, PlayerData> = new Map();
 wsServer.on('connection', (ws) => {
-  console.log(`WebSocket server parameters: PORT: ${JSON.stringify(wsServer.options.port)}`);
+  console.log(`WebSocket server is starting parameters: PORT: ${JSON.stringify(wsServer.options.port)}`);
   ws.on('message', (message) => {
     const messageString = message.toString('utf-8');
     const parsedMessage = JSON.parse(messageString);
