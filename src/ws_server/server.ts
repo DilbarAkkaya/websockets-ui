@@ -17,13 +17,12 @@ wsServer.on('connection', (ws) => {
   ws.on('message', (message) => {
     const messageString = message.toString('utf-8');
     const parsedMessage = JSON.parse(messageString);
+    console.log('recieved message:', parsedMessage);
     try {
       switch (parsedMessage.type) {
         case TypesOfMessages.Reg:
           const parsedData = JSON.parse(parsedMessage.data);
           const isValid = [...wsUserMap.values()].some(item => item.name === parsedData.name);
-          console.log([...wsUserMap.values()])
-          console.log('parsedData', parsedData);
           const user = {
             name: parsedData.name,
             password: parsedData.password,
