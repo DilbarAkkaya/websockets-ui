@@ -1,3 +1,6 @@
+
+IMPORTANT! create .env file with variable PORT=3000 in the project root folder.
+
 # RSSchool NodeJS websocket task template
 > Static http server and base task packages. 
 > By default WebSocket client tries to connect to the 3000 port.
